@@ -11,20 +11,20 @@ language:
 
 # Model Card for HelpMum Vax-Llama-1
 
-The HelpMum Vax-Llama-1 is an advanced language model designed to provide accurate and relevant information about vaccinations and immunizations. It is fine-tuned from the Llama3 model and built using the Hugging Face Transformers framework. This model has 8 billion parameters and is optimized for delivering precise responses to queries related to vaccination safety, schedules, and more.
+The HelpMum Vax-Llama-1 is an advanced language model designed to provide accurate and relevant information about vaccinations and immunizations. It is fine-tuned from the Llama 3.1 8B model and built using the Hugging Face Transformers framework. This model has 8 billion parameters and is optimized for delivering precise responses to queries related to vaccination safety, schedules, and more.
 
 ## Model Details
 
 ### Model Description
 
-The HelpMum Vax-Llama-1 model is a specialized chatbot model developed to enhance the dissemination of vaccination-related information. It has been fine-tuned from the Llama3 base model with 8 billion parameters, using a diverse dataset of vaccination queries and responses. This model aims to provide reliable information to users, helping them make informed decisions about vaccinations.
+The HelpMum Vax-Llama-1 model is a specialized chatbot model developed to enhance the dissemination of vaccination-related information. It has been fine-tuned from the Llama 3.1 8B base model, using a diverse dataset of vaccination queries and responses. This model aims to provide reliable information to users, helping them make informed decisions about vaccinations.
 
 - **Developed by:** HelpMum
 - **Funded by:** HelpMum
 - **Shared by:** HelpMum
 - **Model type:** Transformer-based language model
 - **Language(s) (NLP):** English
-- **Finetuned from model:** Llama3
+- **Finetuned from model:** Llama 3.1 8B
 
 ### Model Sources
 
@@ -57,30 +57,28 @@ Users should ensure that the model is used in contexts where it can provide valu
 Use the following code to get started with the Vax-Llama-1 model:
 
 ```python
-from transformers import AutoModel, AutoTokenizer
+!pip install -q -U transformers
+!pip install -q -U bitsandbytes
 
-tokenizer = AutoTokenizer.from_pretrained("HelpMumHQ/vax-llama-1")
-model = AutoModel.from_pretrained("HelpMumHQ/vax-llama-1")
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-messages = [
-    {
-        "role": "user",
-        "content": "Are vaccines safe for pregnant women?"
-    }
-]
+tokenizer = AutoTokenizer.from_pretrained('HelpMumHQ/vax-llama-1')
+model = AutoModelForCausalLM.from_pretrained('HelpMumHQ/vax-llama-1')
 
-prompt = tokenizer.apply_chat_template(messages, tokenize=False, 
-                                       add_generation_prompt=True)
+def generate_response(user_message):
+    tokenizer.chat_template = "{%- for message in messages %}{{ bos_token + '[INST] ' + message['content'] + ' [/INST]' if message['role'] == 'user' else ' ' + message['content'] + ' ' + eos_token }}{%- endfor %}"
+    messages = [{"role": "user", "content": user_message}]
+    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(prompt, return_tensors='pt', truncation=True).to("cuda")
+    outputs = model.generate(**inputs, max_length=150, num_return_sequences=1)
+    text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = (text[text.find('[/INST]') + len('[/INST]'):text.find('[INST]', text.find('[/INST]') + len('[/INST]'))] if text.find('[INST]', text.find('[/INST]') + len('[/INST]')) != -1 else text[text.find('[/INST]') + len('[/INST]'):]).strip().split('[/INST]')[0].strip()
+    return response
 
-inputs = tokenizer(prompt, return_tensors='pt', padding=True, 
-                   truncation=True).to("cuda")
-
-outputs = model.generate(**inputs, max_length=150, 
-                         num_return_sequences=1)
-
-text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-print(text.split("assistant")[1])
+# Sample usage
+user_message = "Are vaccines safe for pregnant women?"
+response = generate_response(user_message)
+print(response)
 ```
 
 ## Training Details
@@ -88,22 +86,6 @@ print(text.split("assistant")[1])
 ### Training Data
 
 The data for this model was collected from HelpMum's extensive database of vaccination-related queries and responses, which includes real-world interactions and expert-verified information.
-
-### Training Procedure
-
-The model was fine-tuned on the vaccination dataset using the following hyperparameters:
-
-- **Fine-Tuning Epochs:** 3
-- **Batch Size:** 1 (per device for training and evaluation)
-- **Learning Rate:** 2e-4
-- **Max Tokens per Response:** 512
-
-
-#### Preprocessing
-
-The data was cleaned and tokenized to ensure high-quality input for the model training process.
-
-## Evaluation
 
 ### Testing Data, Factors & Metrics
 
@@ -121,7 +103,6 @@ The evaluation considered various factors, including the accuracy and relevance 
 - **Runtime:** 195.8647 seconds
 - **Samples per Second:** 0.735
 
-
 ### Results
 
 The Vax-Llama-1 model performed well in delivering accurate and relevant responses to vaccination queries, with high user satisfaction and efficiency.
@@ -138,10 +119,9 @@ The model underwent rigorous testing and evaluation to ensure it meets the desir
 
 ### Model Architecture and Objective
 
-The Vax-Llama-1 is a transformer-based language model built on the Llama3 architecture, designed to generate accurate responses to vaccination-related queries.
+The Vax-Llama-1 is a transformer-based language model built on the Llama 3.1 architecture, designed to generate accurate responses to vaccination-related queries.
 
 ### Compute Infrastructure
-
 
 #### Software
 
@@ -158,7 +138,7 @@ The Vax-Llama-1 is a transformer-based language model built on the Llama3 archit
     title        = { vax-llama-1 (Revision 033a456) },
     year         = 2024,
     url          = { https://huggingface.co/HelpMumHQ/vax-llama-1 },
-    doi          = { 10.57967/hf/2755 },
+    doi          = { 10.57967/hf/2793 },
     publisher    = { Hugging Face }
 }
 ```
